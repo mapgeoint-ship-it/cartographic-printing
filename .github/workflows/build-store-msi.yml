@@ -1,0 +1,149 @@
+name: Build Store MSI
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version, for example 1.0.0"
+        required: true
+        default: "1.0.0"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    env:
+      VERSION: ${{ inputs.version }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Publish self-contained x64 application
+        shell: pwsh
+        run: |
+          dotnet publish .\CartographicPrinting.csproj `
+            -c Release `
+            -r win-x64 `
+            --self-contained true `
+            -p:Version=$env:VERSION `
+            -p:PublishSingleFile=true `
+            -p:IncludeNativeLibrariesForSelfExtract=true `
+            -p:EnableCompressionInSingleFile=true `
+            -o .\publish
+
+          if (-not (Test-Path .\publish\CartographicPrinting.exe)) {
+            throw "CartographicPrinting.exe was not produced."
+          }
+
+      - name: Prepare code signing
+        shell: pwsh
+        env:
+          PFX_B64: ${{ secrets.WINDOWS_SIGNING_PFX_BASE64 }}
+          PFX_PASS: ${{ secrets.WINDOWS_SIGNING_PFX_PASSWORD }}
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:PFX_B64) -or [string]::IsNullOrWhiteSpace($env:PFX_PASS)) {
+            "HAS_SIGNING=false" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+            Write-Warning "No trusted code-signing certificate is configured. A test MSI will be built, but no Store release will be created."
+            exit 0
+          }
+
+          [IO.File]::WriteAllBytes("$env:RUNNER_TEMP\codesign.pfx", [Convert]::FromBase64String($env:PFX_B64))
+          "HAS_SIGNING=true" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Sign application EXE
+        if: env.HAS_SIGNING == 'true'
+        shell: pwsh
+        env:
+          PFX_PASS: ${{ secrets.WINDOWS_SIGNING_PFX_PASSWORD }}
+        run: |
+          $signtool = Get-ChildItem "${env:ProgramFiles(x86)}\Windows Kits\10\bin\*\x64\signtool.exe" |
+            Sort-Object FullName -Descending |
+            Select-Object -First 1
+
+          if (-not $signtool) { throw "signtool.exe not found." }
+
+          & $signtool.FullName sign /fd SHA256 /tr http://timestamp.digicert.com /td SHA256 `
+            /f "$env:RUNNER_TEMP\codesign.pfx" /p "$env:PFX_PASS" `
+            .\publish\CartographicPrinting.exe
+
+          if ($LASTEXITCODE -ne 0) { throw "EXE signing failed." }
+
+      - name: Install WiX Toolset
+        shell: pwsh
+        run: choco install wixtoolset --yes --no-progress
+
+      - name: Build x64 MSI
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force .\obj, .\output | Out-Null
+
+          $candle = Get-ChildItem "${env:ProgramFiles(x86)}\WiX Toolset*\bin\candle.exe" |
+            Sort-Object FullName -Descending |
+            Select-Object -First 1
+
+          if (-not $candle) { throw "WiX candle.exe not found." }
+          $wixBin = Split-Path $candle.FullName
+          $publishDir = (Resolve-Path .\publish).Path
+
+          & "$wixBin\candle.exe" -nologo -arch x64 `
+            "-dPublishDir=$publishDir" `
+            "-dProductVersion=$env:VERSION" `
+            -out .\obj\Product.wixobj `
+            .\Product.wxs
+
+          if ($LASTEXITCODE -ne 0) { throw "WiX candle failed." }
+
+          & "$wixBin\light.exe" -nologo `
+            -out .\output\Cartographic_Printing_Setup_x64.msi `
+            .\obj\Product.wixobj
+
+          if ($LASTEXITCODE -ne 0) { throw "WiX light failed." }
+
+      - name: Sign MSI
+        if: env.HAS_SIGNING == 'true'
+        shell: pwsh
+        env:
+          PFX_PASS: ${{ secrets.WINDOWS_SIGNING_PFX_PASSWORD }}
+        run: |
+          $signtool = Get-ChildItem "${env:ProgramFiles(x86)}\Windows Kits\10\bin\*\x64\signtool.exe" |
+            Sort-Object FullName -Descending |
+            Select-Object -First 1
+
+          & $signtool.FullName sign /fd SHA256 /tr http://timestamp.digicert.com /td SHA256 `
+            /f "$env:RUNNER_TEMP\codesign.pfx" /p "$env:PFX_PASS" `
+            .\output\Cartographic_Printing_Setup_x64.msi
+
+          if ($LASTEXITCODE -ne 0) { throw "MSI signing failed." }
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Cartographic_Printing_Setup_x64
+          path: .\output\Cartographic_Printing_Setup_x64.msi
+
+      - name: Create immutable GitHub Release
+        if: env.HAS_SIGNING == 'true'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = "v$env:VERSION"
+
+          gh release view $tag *> $null
+          if ($LASTEXITCODE -eq 0) {
+            throw "Release $tag already exists. Use a new version so the submitted binary never changes."
+          }
+
+          gh release create $tag `
+            .\output\Cartographic_Printing_Setup_x64.msi `
+            --target $env:GITHUB_SHA `
+            --title "Cartographic Printing $env:VERSION" `
+            --notes "Windows x64 standalone MSI for Microsoft Store submission."
