@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <Product Id="*" Name="Картографічний друк" Language="1058"
+           Version="$(var.ProductVersion)" Manufacturer="MAPGEOINT"
+           UpgradeCode="{42A349B3-15D8-4EB6-B292-279D4B47CC49}">
+
+    <Package InstallerVersion="500" Compressed="yes" InstallScope="perMachine" Platform="x64" />
+    <MajorUpgrade DowngradeErrorMessage="На цьому комп'ютері вже встановлено новішу версію Картографічного друку." />
+    <MediaTemplate EmbedCab="yes" />
+
+    <Property Id="ARPNOREPAIR" Value="1" />
+
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="ProgramFiles64Folder">
+        <Directory Id="INSTALLFOLDER" Name="Cartographic Printing" />
+      </Directory>
+      <Directory Id="ProgramMenuFolder">
+        <Directory Id="ApplicationProgramsFolder" Name="Cartographic Printing" />
+      </Directory>
+    </Directory>
+
+    <Component Id="MainExecutable" Directory="INSTALLFOLDER" Guid="*">
+      <File Id="AppExe" Source="$(var.PublishDir)\CartographicPrinting.exe" KeyPath="yes">
+        <Shortcut Id="StartMenuShortcut"
+                  Directory="ApplicationProgramsFolder"
+                  Name="Картографічний друк"
+                  Description="Підготовка картографічних матеріалів до друку"
+                  WorkingDirectory="INSTALLFOLDER"
+                  Advertise="yes" />
+      </File>
+    </Component>
+
+    <Component Id="StartMenuFolderCleanup" Directory="ApplicationProgramsFolder" Guid="*">
+      <RemoveFolder Id="RemoveApplicationProgramsFolder" On="uninstall" />
+      <RegistryValue Root="HKLM"
+                     Key="Software\MAPGEOINT\CartographicPrinting"
+                     Name="Installed"
+                     Type="integer"
+                     Value="1"
+                     KeyPath="yes" />
+    </Component>
+
+    <Feature Id="ProductFeature" Title="Картографічний друк" Level="1">
+      <ComponentRef Id="MainExecutable" />
+      <ComponentRef Id="StartMenuFolderCleanup" />
+    </Feature>
+  </Product>
+</Wix>

@@ -1,0 +1,152 @@
+<Window x:Class="CartographicPrinting.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Картографічний друк" Height="820" Width="1380"
+        MinHeight="680" MinWidth="1080"
+        WindowStartupLocation="CenterScreen">
+    <Grid Background="#F4F7FB">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="72"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="34"/>
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0" Background="White" BorderBrush="#D9E2EF" BorderThickness="0,0,0,1">
+            <Grid Margin="18,8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="Картографічний друк" FontSize="27" FontWeight="SemiBold" Foreground="#0B2C5F"/>
+                    <TextBlock Text="Підготовка картографічних матеріалів до друку" Foreground="#5B6B7D"/>
+                </StackPanel>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Content="Відкрити файл" Click="OpenFile_Click"/>
+                    <Button Content="Друк" Click="Print_Click" IsDefault="True"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="390"/>
+            </Grid.ColumnDefinitions>
+
+            <Border Margin="16" Background="White" CornerRadius="8" BorderBrush="#D9E2EF" BorderThickness="1">
+                <Grid>
+                    <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+                        <Grid Margin="16">
+                            <Image x:Name="MapImage" Stretch="Uniform"/>
+                            <TextBlock x:Name="EmptyHint"
+                                       Text="Відкрийте PNG, JPG, BMP або TIFF карту"
+                                       FontSize="22" Foreground="#7E8B99"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Grid>
+                    </ScrollViewer>
+                </Grid>
+            </Border>
+
+            <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto">
+                <StackPanel Margin="0,16,16,16">
+                    <GroupBox Header="Файл карти" Margin="0,0,0,10">
+                        <StackPanel Margin="8">
+                            <TextBox x:Name="FilePathBox" IsReadOnly="True"/>
+                            <Button Content="Вибрати файл…" HorizontalAlignment="Left" Click="OpenFile_Click"/>
+                            <TextBlock Text="Підтримуються PNG, JPG, BMP, TIFF" Margin="5,2" Foreground="#687887"/>
+                        </StackPanel>
+                    </GroupBox>
+
+                    <GroupBox Header="Формат друку" Margin="0,0,0,10">
+                        <Grid Margin="8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="125"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <TextBlock Grid.Row="0" Text="Формат:" VerticalAlignment="Center"/>
+                            <ComboBox Grid.Row="0" Grid.Column="1" x:Name="PaperPresetBox" SelectionChanged="PaperPresetBox_SelectionChanged">
+                                <ComboBoxItem Content="A4" IsSelected="True"/>
+                                <ComboBoxItem Content="A3"/>
+                                <ComboBoxItem Content="A2"/>
+                                <ComboBoxItem Content="A1"/>
+                                <ComboBoxItem Content="A0"/>
+                                <ComboBoxItem Content="Рулон 610 мм"/>
+                                <ComboBoxItem Content="Власний"/>
+                            </ComboBox>
+
+                            <TextBlock Grid.Row="1" Text="Ширина, мм:" VerticalAlignment="Center"/>
+                            <TextBox Grid.Row="1" Grid.Column="1" x:Name="WidthMmBox" Text="210"/>
+
+                            <TextBlock Grid.Row="2" Text="Висота, мм:" VerticalAlignment="Center"/>
+                            <TextBox Grid.Row="2" Grid.Column="1" x:Name="HeightMmBox" Text="297"/>
+
+                            <TextBlock Grid.Row="3" Text="Орієнтація:" VerticalAlignment="Center"/>
+                            <ComboBox Grid.Row="3" Grid.Column="1" x:Name="OrientationBox">
+                                <ComboBoxItem Content="Книжкова" IsSelected="True"/>
+                                <ComboBoxItem Content="Альбомна"/>
+                            </ComboBox>
+                        </Grid>
+                    </GroupBox>
+
+                    <GroupBox Header="Масштаб" Margin="0,0,0,10">
+                        <StackPanel Margin="8">
+                            <ComboBox x:Name="ScaleModeBox" SelectionChanged="ScaleModeBox_SelectionChanged">
+                                <ComboBoxItem Content="Вмістити в аркуш" IsSelected="True"/>
+                                <ComboBoxItem Content="Точний масштаб"/>
+                            </ComboBox>
+                            <Grid x:Name="ExactScalePanel" IsEnabled="False">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="150"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <TextBlock Text="Масштаб оригіналу 1:" VerticalAlignment="Center"/>
+                                <TextBox Grid.Column="1" x:Name="SourceScaleBox" Text="50000"/>
+                                <TextBlock Grid.Row="1" Text="Друкувати 1:" VerticalAlignment="Center"/>
+                                <ComboBox Grid.Row="1" Grid.Column="1" x:Name="TargetScaleBox" IsEditable="True" Text="50000">
+                                    <ComboBoxItem Content="5000"/>
+                                    <ComboBoxItem Content="10000"/>
+                                    <ComboBoxItem Content="25000"/>
+                                    <ComboBoxItem Content="50000"/>
+                                    <ComboBoxItem Content="100000"/>
+                                    <ComboBoxItem Content="200000"/>
+                                    <ComboBoxItem Content="500000"/>
+                                </ComboBox>
+                            </Grid>
+                            <TextBlock Text="Для точного фізичного розміру використовується DPI файлу." TextWrapping="Wrap" Foreground="#687887" Margin="5,3"/>
+                        </StackPanel>
+                    </GroupBox>
+
+                    <GroupBox Header="Поля, мм" Margin="0,0,0,10">
+                        <UniformGrid Columns="2" Margin="8">
+                            <StackPanel><TextBlock Text="Ліве"/><TextBox x:Name="LeftMarginBox" Text="10"/></StackPanel>
+                            <StackPanel><TextBlock Text="Праве"/><TextBox x:Name="RightMarginBox" Text="10"/></StackPanel>
+                            <StackPanel><TextBlock Text="Верхнє"/><TextBox x:Name="TopMarginBox" Text="10"/></StackPanel>
+                            <StackPanel><TextBlock Text="Нижнє"/><TextBox x:Name="BottomMarginBox" Text="10"/></StackPanel>
+                        </UniformGrid>
+                    </GroupBox>
+
+                    <Border Background="#EAF3FF" CornerRadius="6" Padding="10" Margin="0,0,0,8">
+                        <TextBlock x:Name="PrintInfoText" Text="Відкрийте карту для розрахунку параметрів." TextWrapping="Wrap"/>
+                    </Border>
+
+                    <Button Content="Друкувати" Height="46" FontWeight="SemiBold" Click="Print_Click"/>
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
+
+        <Border Grid.Row="2" Background="White" BorderBrush="#D9E2EF" BorderThickness="0,1,0,0">
+            <TextBlock x:Name="StatusText" Margin="16,7" Foreground="#5B6B7D" Text="Готово"/>
+        </Border>
+    </Grid>
+</Window>
