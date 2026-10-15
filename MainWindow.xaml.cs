@@ -1,6 +1,7 @@
 using Microsoft.Win32;
 using System.Globalization;
 using System.Printing;
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
