@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
-  <Product Id="*" Name="Картографічний друк" Language="1058"
+<Product Id="*" Name="Картографічний друк" Language="1058" Codepage="1251"
            Version="$(var.ProductVersion)" Manufacturer="MAPGEOINT"
            UpgradeCode="{42A349B3-15D8-4EB6-B292-279D4B47CC49}">
 
