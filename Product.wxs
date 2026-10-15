@@ -14,7 +14,7 @@
       <Directory Id="ProgramFiles64Folder">
         <Directory Id="INSTALLFOLDER" Name="Cartographic Printing" />
       </Directory>
-      <Directory Id="ProgramMenuFolder">
+    <Directory Id="CommonProgramMenuFolder">
         <Directory Id="ApplicationProgramsFolder" Name="Cartographic Printing" />
       </Directory>
     </Directory>
