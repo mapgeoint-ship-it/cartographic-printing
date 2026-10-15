@@ -29,7 +29,7 @@ jobs:
       - name: Publish self-contained x64 application
         shell: pwsh
         run: |
-          dotnet publish .\src\CartographicPrinting\CartographicPrinting.csproj `
+          dotnet publish .\CartographicPrinting.csproj `
             -c Release `
             -r win-x64 `
             --self-contained true `
@@ -97,7 +97,7 @@ jobs:
             "-dPublishDir=$publishDir" `
             "-dProductVersion=$env:VERSION" `
             -out .\obj\Product.wixobj `
-            .\installer\Product.wxs
+            .\Product.wxs
 
           if ($LASTEXITCODE -ne 0) { throw "WiX candle failed." }
 
